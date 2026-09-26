@@ -2,13 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tauri + SvelteKit + Typescript App</title>
-    <link href="/_app/immutable/entry/start.CpnqBpd6.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/DAxWFhul.js" rel="modulepreload">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>IntPortal</title>
+    <style>html,body{background:#1f1f22}</style>
+    <script>
+      addEventListener("error", (e) => document.body && document.body.insertAdjacentHTML("afterbegin", "<pre style='color:#f88;white-space:pre-wrap;padding:60px 16px 0'>" + e.message + " @ " + e.filename + ":" + e.lineno + "</pre>"));
+      addEventListener("unhandledrejection", (e) => document.body && document.body.insertAdjacentHTML("afterbegin", "<pre style='color:#fa8;white-space:pre-wrap;padding:60px 16px 0'>" + (e.reason && (e.reason.stack || e.reason)) + "</pre>"));
+    </script>
+    <link href="/_app/immutable/entry/start.BtVU43ZT.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/7TzLSCwS.js" rel="modulepreload">
 		<link href="/_app/immutable/chunks/DmRQxE9B.js" rel="modulepreload">
-		<link href="/_app/immutable/entry/app.5i2PrPpa.js" rel="modulepreload">
+		<link href="/_app/immutable/entry/app.ClrZ4IT1.js" rel="modulepreload">
 		<link href="/_app/immutable/chunks/xihTtKlq.js" rel="modulepreload">
 		<link href="/_app/immutable/nodes/0.7t3gSuDm.js" rel="modulepreload">
 		
@@ -17,15 +21,15 @@
     <div style="display: contents">
 			<script>
 				{
-					__sveltekit_fuoaep = {
+					__sveltekit_1q4c126 = {
 						base: ""
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("/_app/immutable/entry/start.CpnqBpd6.js"),
-						import("/_app/immutable/entry/app.5i2PrPpa.js")
+						import("/_app/immutable/entry/start.BtVU43ZT.js"),
+						import("/_app/immutable/entry/app.ClrZ4IT1.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element);
 					});

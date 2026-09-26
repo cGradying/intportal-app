@@ -17,3 +17,12 @@ It is a from-scratch rebuild of the macOS IntPortal app. The old app's docs live
 Phase 0: foundation and spikes. The plan and parts are on the wayfinder map issue.
 
 Only your own account is supported, which is what PUP's terms allow.
+
+## Running on the iOS simulator
+
+```bash
+pnpm tauri ios build --target aarch64-sim --debug
+xcrun simctl install booted src-tauri/gen/apple/build/arm64-sim/IntPortal.app
+```
+
+Needs the iOS simulator runtime that matches your Xcode (`xcodebuild -downloadPlatform iOS`). `pnpm tauri ios dev "<name>"` can pick a real device with the same model name, which then needs signing; install the simulator build directly instead.

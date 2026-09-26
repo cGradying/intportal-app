@@ -1033,10 +1033,10 @@ var options = {
 	service_worker_options: void 0,
 	server_error_boundaries: false,
 	templates: {
-		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <link rel=\"icon\" href=\"" + assets + "/favicon.png\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Tauri + SvelteKit + Typescript App</title>\n    " + head + "\n  </head>\n  <body data-sveltekit-preload-data=\"hover\">\n    <div style=\"display: contents\">" + body + "</div>\n  </body>\n</html>\n",
+		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" />\n    <title>IntPortal</title>\n    <style>html,body{background:#1f1f22}</style>\n    <script>\n      addEventListener(\"error\", (e) => document.body && document.body.insertAdjacentHTML(\"afterbegin\", \"<pre style='color:#f88;white-space:pre-wrap;padding:60px 16px 0'>\" + e.message + \" @ \" + e.filename + \":\" + e.lineno + \"</pre>\"));\n      addEventListener(\"unhandledrejection\", (e) => document.body && document.body.insertAdjacentHTML(\"afterbegin\", \"<pre style='color:#fa8;white-space:pre-wrap;padding:60px 16px 0'>\" + (e.reason && (e.reason.stack || e.reason)) + \"</pre>\"));\n    <\/script>\n    " + head + "\n  </head>\n  <body data-sveltekit-preload-data=\"hover\">\n    <div style=\"display: contents\">" + body + "</div>\n  </body>\n</html>\n",
 		error: error_template_default
 	},
-	version_hash: "fuoaep"
+	version_hash: "1q4c126"
 };
 async function get_hooks() {
 	let handle;
