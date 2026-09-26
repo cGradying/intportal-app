@@ -1,5 +1,6 @@
 <script lang="ts">
   import CampusStrip from "../CampusStrip.svelte";
+  import Scene from "../Scene.svelte";
   import { app } from "../state.svelte";
   import { clock, span, subjectColor } from "../api";
 
@@ -90,12 +91,7 @@
 
     {#if items.length === 0}
       <div class="empty card notch">
-        <svg viewBox="0 0 32 16" shape-rendering="crispEdges" aria-hidden="true">
-          <path d="M4 4h2v12H4zM26 4h2v12h-2z" fill="var(--ink-3)" />
-          <path d="M2 2h6v2H2zM24 2h6v2h-6z" fill="var(--good)" />
-          <path d="M6 9h2v1h2v1h12v-1h2v-1h2v2h-2v1h-2v1H10v-1H8v-1H6z" fill="var(--gold)" />
-          <path d="M14 8h4v3h-4z" fill="var(--ink-2)" />
-        </svg>
+        <Scene name="hammock" label="A hammock between two palm trees" />
         <p>No classes today. Rest up.</p>
       </div>
     {:else}
@@ -313,10 +309,6 @@
     gap: 8px;
     padding: 22px;
     color: var(--ink-2);
-  }
-  .empty svg {
-    width: 96px;
-    height: 48px;
   }
   .empty p,
   .tomorrow {

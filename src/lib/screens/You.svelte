@@ -3,7 +3,7 @@
   import { api } from "../api";
   import { HAND_TUNED, PALETTES, derive } from "../rooms";
 
-  let { onsignout }: { onsignout: () => void } = $props();
+  let { onsignout, ongallery }: { onsignout: () => void; ongallery?: () => void } = $props();
   let confirming = $state(false);
 
   const rooms = [
@@ -63,6 +63,10 @@
       {/each}
     </div>
   </section>
+
+  {#if __REVIEW__ && ongallery}
+    <button class="ghost" onclick={ongallery}>Open the design gallery</button>
+  {/if}
 
   <section class="card notch block">
     <p class="label">Privacy</p>

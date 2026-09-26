@@ -8,12 +8,14 @@
   import Schedule from "$lib/screens/Schedule.svelte";
   import Grades from "$lib/screens/Grades.svelte";
   import You from "$lib/screens/You.svelte";
+  import Gallery from "$lib/Gallery.svelte";
   import { api } from "$lib/api";
   import { app, adopt, setRoom, startClock } from "$lib/state.svelte";
 
   let ready = $state(false);
   let signedIn = $state(false);
   let inside = $state(false);
+  let gallery = $state(false);
 
   onMount(async () => {
     setRoom(app.room);
@@ -27,6 +29,7 @@
   // Each tab opens at its top, not wherever the last one was scrolled.
   $effect(() => {
     void app.tab;
+    gallery = false;
     window.scrollTo(0, 0);
   });
 
@@ -57,7 +60,8 @@
           {#if app.tab === "today"}<Today />
           {:else if app.tab === "schedule"}<Schedule />
           {:else if app.tab === "grades"}<Grades />
-          {:else}<You onsignout={signedOut} />{/if}
+          {:else if gallery}<Gallery onclose={() => (gallery = false)} />
+          {:else}<You onsignout={signedOut} ongallery={() => ((gallery = true), window.scrollTo(0, 0))} />{/if}
         </div>
       {/key}
     </main>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Scene from "../Scene.svelte";
   import { app, adopt } from "../state.svelte";
   import { api, subjectColor, type GradeReport, type SubjectGrade } from "../api";
 
@@ -108,6 +109,13 @@
     {/if}
   </section>
   <p class="note">Lower is better on PUP's 1.00–5.00 scale. Weighted by units; INC and DRP don't count.</p>
+
+  {#if posted.length === 0}
+    <div class="empty card notch">
+      <Scene name="mailbox" label="A mailbox asleep with its flag down" />
+      <p><strong>No grades posted yet.</strong> They get stamped here the moment your professors post them.</p>
+    </div>
+  {/if}
 
   <ol>
     {#each subjects as s (s.subject_code + s.section_code + s.occurrence)}
@@ -257,6 +265,22 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--ink-2);
+  }
+  .empty {
+    --step: 4px;
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 18px 20px 20px;
+    text-align: center;
+  }
+  .empty p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .empty strong {
+    color: var(--ink);
   }
   .past {
     justify-self: center;

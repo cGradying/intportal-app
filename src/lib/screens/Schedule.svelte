@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Scene from "../Scene.svelte";
   import { app, adopt } from "../state.svelte";
   import { api, clock, isoDate, sessionId, subjectColor, WEEKDAYS, type ClassSession, type Mark, type Weekday } from "../api";
 
@@ -53,13 +54,7 @@
 
   {#if list.length === 0}
     <div class="empty card notch">
-      <svg viewBox="0 0 24 16" shape-rendering="crispEdges" aria-hidden="true">
-        <path d="M2 12h20v2H2z" fill="var(--ink-3)" />
-        <path d="M6 6h12v6H6z" fill="var(--card-2)" />
-        <path d="M6 6h12v1H6zM6 6h1v6H6zM17 6h1v6h-1z" fill="var(--ink-2)" />
-        <path d="M9 8h2v2H9zM13 8h2v2h-2z" fill="var(--gold)" />
-        <path d="M11 2h2v4h-2z" fill="var(--ink-3)" />
-      </svg>
+      <Scene name="hammock" label="A hammock between two palm trees" />
       <p>No classes on {day}.</p>
     </div>
   {:else}
@@ -235,10 +230,6 @@
     justify-items: center;
     gap: 8px;
     padding: 24px;
-  }
-  .empty svg {
-    width: 84px;
-    height: 56px;
   }
   .empty p {
     margin: 0;
