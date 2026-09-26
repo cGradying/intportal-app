@@ -18,6 +18,12 @@
   let gallery = $state(false);
 
   onMount(async () => {
+    if (__REVIEW__) {
+      // Review builds put uncaught errors on screen; there is no console on a phone.
+      const show = (m: string) => document.body.insertAdjacentHTML("beforeend", `<pre style="position:fixed;inset:auto 8px 90px;z-index:99;padding:8px;background:#300;color:#fbb;white-space:pre-wrap;font-size:11px">${m.replace(/</g, "&lt;")}</pre>`);
+      addEventListener("error", (e) => show(`${e.message} @ ${e.filename}:${e.lineno}`));
+      addEventListener("unhandledrejection", (e) => show(String(e.reason?.stack ?? e.reason)));
+    }
     setRoom(app.room);
     const [login, snap] = await Promise.all([api.hasLogin().catch(() => false), api.snapshot().catch(() => null)]);
     signedIn = login;

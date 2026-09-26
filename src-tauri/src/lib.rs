@@ -104,10 +104,17 @@ async fn refresh(state: &AppState, client: &SisClient, rows: Option<Vec<schedule
         Some(r) => r,
         None => client.schedule().await.map_err(err)?,
     };
-    let (grade_rows, summary) = client.grades().await.map_err(err)?;
     let mut snap = snapshot_of(state)?;
     snap.sessions = schedule::parse(&rows);
-    snap.grades = Some(GradeReport { subjects: grades::parse(&grade_rows), summary, school_year: None, semester: None });
+    // A grades page that fails keeps the last grades; only an expired
+    // session fails the whole sync, so the caller can sign in again.
+    match client.grades().await {
+        Ok((grade_rows, summary)) => {
+            snap.grades = Some(GradeReport { subjects: grades::parse(&grade_rows), summary, school_year: None, semester: None })
+        }
+        Err(e @ sis::Error::SignedOut) => return Err(err(e)),
+        Err(_) => {}
+    }
     snap.host = Some(client.host().to_string());
     snap.last_synced = Some(now_secs());
     state.store.lock().unwrap().save(&snap).map_err(err)?;
