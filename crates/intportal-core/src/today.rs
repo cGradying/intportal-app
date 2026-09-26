@@ -296,6 +296,54 @@ pub fn glance(
     Glance::DayDone { tomorrow }
 }
 
+/// One class reminder for the platform to deliver at `date` + `minute`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Reminder {
+    /// Stable per session and date, so rescheduling replaces rather than duplicates.
+    pub id: i32,
+    pub date: Date,
+    pub minute: u16,
+    pub title: String,
+    pub body: String,
+}
+
+/// Reminders `lead` minutes before every meeting in the next `days` days that
+/// hasn't started yet. A meeting marked vacant for its week is skipped, so a
+/// one-week cancellation silences just that week (the old app could only
+/// skip whole-term vacancies).
+pub fn reminders(sessions: &[ClassSession], marks: &Marks, now: Moment, lead: u16, days: u16) -> Vec<Reminder> {
+    let now_abs = now.date.days() * 1440 + i64::from(now.minute);
+    let mut out: Vec<(i64, Reminder)> = (0..i64::from(days))
+        .map(|d| now.date.add_days(d))
+        .flat_map(|date| sessions.iter().filter(move |s| s.day == date.weekday()).map(move |s| (date, s)))
+        .filter(|(date, s)| !marks.is_vacant(s, *date))
+        .filter_map(|(date, s)| {
+            let at = date.days() * 1440 + i64::from(s.start) - i64::from(lead);
+            if at <= now_abs {
+                return None;
+            }
+            let fire = Date::from_days(at.div_euclid(1440));
+            let online = marks.get(s, date) == Mark::Online;
+            let mut h: i32 = 17;
+            for b in format!("{}@{date}", s.id()).bytes() {
+                h = h.wrapping_mul(31).wrapping_add(i32::from(b));
+            }
+            Some((
+                at,
+                Reminder {
+                    id: h & 0x7fff_ffff,
+                    date: fire,
+                    minute: at.rem_euclid(1440) as u16,
+                    title: format!("{} in {lead} min", s.subject_code),
+                    body: format!("{} · {}{}", s.description, clock(s.start), if online { " · Online" } else { "" }),
+                },
+            ))
+        })
+        .collect();
+    out.sort_by_key(|(at, _)| *at);
+    out.into_iter().map(|(_, r)| r).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -409,6 +457,41 @@ mod tests {
         let mut marks = Marks::default();
         marks.term.insert(w[0].id(), Mark::Online);
         assert_eq!(glance(&w, &marks, at(3, 8, 48), None, false).line(), "COMP 002 · in 12m");
+    }
+
+    #[test]
+    fn reminders_fire_ahead_skip_the_past_and_vacant_weeks() {
+        let w = week();
+        let r = reminders(&w, &Marks::default(), at(3, 9, 30), 10, 7);
+        let when: Vec<(String, u16, String)> = r.iter().map(|r| (r.date.to_string(), r.minute, r.title.clone())).collect();
+        assert_eq!(
+            when,
+            [
+                ("2026-08-03".to_string(), 12 * 60 + 50, "GEED 005 in 10 min".to_string()),
+                ("2026-08-04".to_string(), 8 * 60 + 50, "COMP 001 in 10 min".to_string()),
+            ]
+        );
+        let mut marks = Marks::default();
+        marks.weekly.entry(w[1].id()).or_default().insert(Date::new(2026, 8, 3), Mark::Vacant);
+        marks.term.insert(w[2].id(), Mark::Online);
+        let r = reminders(&w, &marks, at(3, 9, 30), 10, 8);
+        assert_eq!(r.iter().map(|r| r.date.to_string()).collect::<Vec<_>>(), ["2026-08-04", "2026-08-10", "2026-08-10"]);
+        assert_eq!(r[0].body, " · 9AM · Online");
+    }
+
+    #[test]
+    fn reminder_before_an_early_class_lands_the_previous_evening() {
+        let r = reminders(&[s("NSTP 001", Tuesday, 5, 60)], &Marks::default(), at(3, 12, 0), 15, 7);
+        assert_eq!((r[0].date, r[0].minute), (Date::new(2026, 8, 3), 23 * 60 + 50));
+    }
+
+    #[test]
+    fn reminder_ids_are_stable_and_distinct() {
+        let a = reminders(&week(), &Marks::default(), at(3, 0, 0), 10, 14);
+        let b = reminders(&week(), &Marks::default(), at(3, 0, 0), 10, 14);
+        assert_eq!(a, b);
+        let ids: std::collections::HashSet<i32> = a.iter().map(|r| r.id).collect();
+        assert_eq!(ids.len(), a.len());
     }
 
     #[test]
