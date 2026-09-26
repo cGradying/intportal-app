@@ -24,6 +24,12 @@
     ready = true;
   });
 
+  // Each tab opens at its top, not wherever the last one was scrolled.
+  $effect(() => {
+    void app.tab;
+    window.scrollTo(0, 0);
+  });
+
   function enter() {
     inside = true;
   }
@@ -43,6 +49,7 @@
 
 {#if inside}
   <div class="shell dots">
+    <div class="topfade" aria-hidden="true"></div>
     <Island />
     <main>
       {#key app.tab}
@@ -64,6 +71,16 @@
   }
   /* No fill mode: a lingering filter or transform would turn these into the
      containing block for the fixed island, tab bar and sheets. */
+  .topfade {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 25;
+    height: calc(var(--safe-top) + 52px);
+    background: linear-gradient(var(--ground) 55%, transparent);
+    pointer-events: none;
+  }
   main {
     animation: arrive 0.65s var(--ease) backwards;
     padding: calc(var(--safe-top) + 58px) var(--gutter) calc(var(--safe-bottom) + 92px);

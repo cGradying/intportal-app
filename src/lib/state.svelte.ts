@@ -3,6 +3,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Schedule, cancel, isPermissionGranted, pending, requestPermission } from "@tauri-apps/plugin-notification";
 import { api, moment, type Snapshot, type Today } from "./api";
+import { applyRoom } from "./rooms";
 
 export type Tab = "today" | "schedule" | "grades" | "you";
 export type SyncState = "idle" | "syncing" | "ok" | "failed";
@@ -114,7 +115,7 @@ export async function syncNow() {
 
 export function setRoom(room: string) {
   app.room = room;
-  document.documentElement.dataset.room = room;
+  applyRoom(room);
   write("room", room);
 }
 

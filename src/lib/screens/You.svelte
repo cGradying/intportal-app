@@ -1,14 +1,17 @@
 <script lang="ts">
   import { app, setReminderLead, setRoom, syncNow } from "../state.svelte";
   import { api } from "../api";
+  import { HAND_TUNED, PALETTES, derive } from "../rooms";
 
   let { onsignout }: { onsignout: () => void } = $props();
   let confirming = $state(false);
 
   const rooms = [
-    { id: "night", name: "Night", swatch: ["#19191c", "#26262a", "#f5b227"] },
-    { id: "day", name: "Day", swatch: ["#f4f2ef", "#ffffff", "#6d0e1f"] },
-    { id: "maroon", name: "PUP Maroon", swatch: ["#1a0a0e", "#2a1016", "#f2c14e"] },
+    ...HAND_TUNED,
+    ...Object.entries(PALETTES).map(([id, p]) => {
+      const r = derive(p);
+      return { id, name: p.name, swatch: [r["--ground"], r["--card"], r["--gold"]] };
+    }),
   ];
 
   const synced = $derived.by(() => {
@@ -144,10 +147,24 @@
     color: var(--on-gold);
     box-shadow: none;
   }
+  /* Two rows that scroll sideways: no scroll area nested inside the page. */
   .rooms {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, auto);
+    grid-auto-columns: 30%;
     gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 2px;
+    margin: -2px;
+  }
+  .rooms::-webkit-scrollbar {
+    display: none;
+  }
+  .rooms button {
+    scroll-snap-align: start;
   }
   .rooms button {
     height: auto;
@@ -158,7 +175,8 @@
     box-shadow: inset 0 0 0 1px var(--edge);
     font-family: var(--font-body);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.2;
   }
   .rooms button.on {
     box-shadow: inset 0 0 0 2px var(--gold);
