@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Confetti from "../Confetti.svelte";
   import Scene from "../Scene.svelte";
   import { app, adopt } from "../state.svelte";
   import { api, subjectColor, type GradeReport, type SubjectGrade } from "../api";
@@ -42,6 +43,26 @@
     const sem = s.includes("1st") || s.includes("first") ? "1st" : s.includes("2nd") || s.includes("second") ? "2nd" : "Sum";
     return `${sem} ${(r.school_year ?? "").slice(2, 4)}`;
   }
+
+  // A term GPA better than every past term is a personal best (lower is
+  // better). It celebrates once per value on this device.
+  const best = $derived.by(() => {
+    const past = (app.snapshot?.history ?? []).map((r) => gpa(r.subjects)).filter((v): v is number => v !== null);
+    return current !== null && past.length > 0 && current < Math.min(...past);
+  });
+  let celebrate = $state(false);
+  $effect(() => {
+    if (!best || current === null) return;
+    const key = `best-${current.toFixed(2)}`;
+    let done = false;
+    try {
+      done = localStorage.getItem("celebrated") === key;
+      localStorage.setItem("celebrated", key);
+    } catch {
+      // Storage off: it may celebrate again next time. Harmless.
+    }
+    if (!done) celebrate = true;
+  });
 
   // Stamps land once: a grade first seen on this device plays its thunk.
   const SEEN = "stamped";
@@ -92,9 +113,10 @@
   </header>
 
   <section class="gpa card notch">
+    {#if celebrate}<Confetti />{/if}
     <div>
       <p class="label">GPA</p>
-      <p class="value num">{current === null ? "—" : current.toFixed(2)}</p>
+      <p class="value num">{current === null ? "—" : current.toFixed(2)}{#if best}<span class="pb" class:fresh={celebrate}>Personal best</span>{/if}</p>
       <p class="sub">
         {#if current === null}No grades posted yet{:else}{posted.length} of {subjects.length} posted · {units} units{/if}
       </p>
@@ -158,6 +180,7 @@
   }
   .gpa {
     --step: 4px;
+    position: relative;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -171,6 +194,23 @@
     line-height: 1;
     letter-spacing: -0.03em;
     color: var(--gold);
+  }
+  .pb {
+    display: inline-block;
+    margin-left: 12px;
+    padding: 3px 7px;
+    vertical-align: middle;
+    font-family: var(--font-pixel);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold);
+    box-shadow: inset 0 0 0 2px currentColor;
+    transform: rotate(-5deg);
+  }
+  .pb.fresh {
+    animation: thunk 0.55s steps(6) both 0.3s;
   }
   .sub {
     margin: 6px 0 0;
