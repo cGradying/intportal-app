@@ -1,6 +1,7 @@
 //! The Tauri shell: holds the store and the SIS session, and exposes the core
 //! to the Svelte UI as commands. Logic lives in `intportal-core`.
 
+use intportal_core::campus;
 use intportal_core::grades::{self, GradeReport};
 use intportal_core::model::{ClassSession, Weekday};
 use intportal_core::schedule;
@@ -232,6 +233,12 @@ fn today(state: tauri::State<'_, AppState>, now: Moment, sync_trouble: Option<St
     })
 }
 
+/// The campus a student number belongs to, as the student types it.
+#[tauri::command]
+fn campus(student_number: String) -> campus::Resolution {
+    campus::resolve(&student_number)
+}
+
 /// The next `days` of class reminders; the UI hands them to the platform.
 #[tauri::command]
 fn reminders(state: tauri::State<'_, AppState>, now: Moment, lead: u16, days: u16) -> Res<Vec<Reminder>> {
@@ -320,7 +327,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            snapshot, has_login, sign_in, sync, load_history, sign_out, set_mark, today, reminders, demo
+            snapshot, has_login, sign_in, sync, load_history, sign_out, set_mark, today, reminders, campus, demo
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import Portal from "./Portal.svelte";
-  import { api, isoDate, type Login } from "./api";
-  import { adopt, syncNow } from "./state.svelte";
+  import { api, isoDate, type CampusResolution, type Login } from "./api";
+  import { adopt, app, syncNow } from "./state.svelte";
 
   let { signedIn, onenter }: { signedIn: boolean; onenter: () => void } = $props();
 
@@ -15,8 +15,12 @@
   let birthday = $state("");
   let password = $state("");
 
-  const valid = /^\d{4}-\d{5}-[A-Za-z]{2}-\d{1,2}$/;
-  const campusOk = $derived(valid.test(studno.trim()));
+  let campus = $state<CampusResolution>({ kind: "incomplete" });
+  $effect(() => {
+    const n = studno;
+    api.campus(n).then((r) => (campus = r)).catch(() => {});
+  });
+  const campusOk = $derived(campus.kind !== "incomplete");
 
   async function submit(e: Event) {
     e.preventDefault();
@@ -69,14 +73,15 @@
   {#if rest === "hub"}
     <div class="hub">
       <button class="step" onclick={step}>Step through</button>
-      <p class="hint">PUP SIS · Sta. Mesa</p>
+      <p class="hint">PUP SIS · via {(app.snapshot?.host ?? "sis8").split(".")[0]}</p>
     </div>
   {:else}
     <form class="sheet notch" onsubmit={submit}>
       <label>
         <span class="label">Student number</span>
         <input bind:value={studno} placeholder="2026-00000-MN-0" autocapitalize="characters" autocomplete="username" inputmode="text" spellcheck="false" />
-        {#if campusOk}<small class="campus">Sta. Mesa · campus found</small>{/if}
+        {#if campus.kind === "known"}<small class="campus">{campus.campus.name} · campus found</small>
+        {:else if campus.kind === "unknown_code"}<small class="campus dim">{campus.code} · campus not confirmed yet, sign-in still works</small>{/if}
       </label>
       <label>
         <span class="label">Birthdate</span>
@@ -198,6 +203,9 @@
   }
   input:focus {
     box-shadow: inset 0 0 0 1.5px #f5b227;
+  }
+  .campus.dim {
+    color: rgba(244, 236, 216, 0.55);
   }
   .campus {
     font-family: var(--font-pixel);

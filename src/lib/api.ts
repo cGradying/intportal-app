@@ -72,6 +72,11 @@ export interface Reminder {
   body: string;
 }
 
+export type CampusResolution =
+  | { kind: "known"; campus: { code: string | null; name: string; region: string } }
+  | { kind: "unknown_code"; code: string }
+  | { kind: "incomplete" };
+
 export interface Login {
   student_number: string;
   birth_month: number;
@@ -91,6 +96,7 @@ export const api = {
     invoke<Snapshot>("set_mark", { sessionId, week, mark }),
   today: (now: Moment, syncTrouble: string | null) => invoke<Today>("today", { now, syncTrouble }),
   reminders: (now: Moment, lead: number, days: number) => invoke<Reminder[]>("reminders", { now, lead, days }),
+  campus: (studentNumber: string) => invoke<CampusResolution>("campus", { studentNumber }),
   demo: (today: string) => invoke<Snapshot>("demo", { today }),
 };
 
