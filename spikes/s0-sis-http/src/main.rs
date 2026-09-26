@@ -37,7 +37,7 @@ fn form_fields(doc: &Html) -> (Option<String>, Vec<(String, String)>) {
     for el in form.select(&sel("input[name], select[name], textarea[name]")) {
         let name = el.value().attr("name").unwrap().to_string();
         let kind = el.value().attr("type").unwrap_or("").to_ascii_lowercase();
-        if kind == "submit" || kind == "button" {
+        if kind == "button" {
             continue;
         }
         let value = el.value().attr("value").unwrap_or("").to_string();
@@ -82,6 +82,11 @@ fn main() {
     println!("login form action: {action:?}");
     println!("form field names: {:?}", fields.iter().map(|(n, _)| n.as_str()).collect::<Vec<_>>());
     println!("page mentions captcha: {}", body.to_lowercase().contains("captcha"));
+    let js: String = doc.select(&sel("script")).map(|s| s.text().collect::<String>()).collect();
+    for needle in ["submit", "studno", "password", "md5", "sha", "btoa", "encrypt"] {
+        println!("login page script mentions {needle:?}: {}", js.contains(needle));
+    }
+    println!("form tag: {}", doc.select(&sel("form")).find(|f| f.select(&sel("#studno")).next().is_some()).map(|f| { let v=f.value(); format!("method={:?} action={:?} onsubmit={:?}", v.attr("method"), v.attr("action"), v.attr("onsubmit")) }).unwrap_or_default());
     if fields.is_empty() {
         println!("RESULT: no login form with #studno in the served HTML. It is probably built by JS, so plain HTTP fails.");
         return;
@@ -128,6 +133,18 @@ fn main() {
     let (_, _, signed_in) = table_shape(&after);
     let still_form = Html::parse_document(&after).select(&sel("#studno")).next().is_some();
     println!("after POST: logout marker {signed_in}, login form still present {still_form}");
+    let after_doc = Html::parse_document(&after);
+    for m in after_doc.select(&sel(".modal-body, .alert, .error, .invalid-feedback, .text-danger, #msg, .msg")) {
+        let t = m.text().collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ");
+        if !t.is_empty() { println!("page message: {t:.160}"); }
+    }
+    let scripts: String = after_doc.select(&sel("script")).map(|s| s.text().collect::<String>()).collect();
+    for needle in ["alert(", "swal", "Swal.fire", "modal('show')", "toastr"] {
+        if let Some(i) = scripts.find(needle) {
+            let tail: String = scripts[i..].chars().take(140).collect();
+            println!("script hint: {}", tail.replace('\n', " "));
+        }
+    }
 
     for page in ["schedule", "grades"] {
         let r = client.get(format!("{base}/{page}")).send().expect(page);
