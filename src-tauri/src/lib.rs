@@ -8,9 +8,14 @@ use intportal_core::sis::{self, sign_in_with_failover, Credentials, SisClient};
 use intportal_core::store::{Snapshot, Store};
 use intportal_core::today::{self, Agenda, Date, Glance, Mark, Moment, Reminder, Upcoming};
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
+
+/// Set by `demo`: sync then plays a short fake trip instead of calling the
+/// SIS, so review builds can show the sync moment without an account.
+static DEMO: AtomicBool = AtomicBool::new(false);
 
 struct AppState {
     store: Mutex<Store>,
@@ -132,6 +137,13 @@ async fn sign_in(state: tauri::State<'_, AppState>, login: Login) -> Res<Snapsho
 /// missing or expired.
 #[tauri::command]
 async fn sync(state: tauri::State<'_, AppState>) -> Res<Snapshot> {
+    if cfg!(debug_assertions) && DEMO.load(Ordering::Relaxed) {
+        tokio::time::sleep(std::time::Duration::from_millis(2200)).await;
+        let mut snap = snapshot_of(&state)?;
+        snap.last_synced = Some(now_secs());
+        state.store.lock().unwrap().save(&snap).map_err(err)?;
+        return Ok(snap);
+    }
     let mut guard = state.client.lock().await;
     if let Some(client) = guard.as_ref() {
         match refresh(&state, client, None).await {
@@ -160,6 +172,7 @@ async fn load_history(state: tauri::State<'_, AppState>) -> Res<Snapshot> {
 
 #[tauri::command]
 async fn sign_out(state: tauri::State<'_, AppState>) -> Res<()> {
+    DEMO.store(false, Ordering::Relaxed);
     *state.client.lock().await = None;
     vault::clear();
     state.store.lock().unwrap().wipe().map_err(err)
@@ -226,6 +239,7 @@ fn demo(state: tauri::State<'_, AppState>, today: Date) -> Res<Snapshot> {
     if !cfg!(debug_assertions) {
         return Err("demo is only in review builds".into());
     }
+    DEMO.store(true, Ordering::Relaxed);
     let s = |code: &str, desc: &str, day: Weekday, start: u16, end: u16| ClassSession {
         subject_code: code.into(),
         description: desc.into(),

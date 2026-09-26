@@ -4,6 +4,7 @@
   // next class is a lit window in the main building, and a jeepney passes now
   // and then. Drawn at a stepped 12 fps: pixel art's own cadence, and cheap.
   import { onMount } from "svelte";
+  import { JEEP, JEEP_COLORS as JEEPC } from "./sprites";
 
   let { litKey = "", hour = $bindable<number | null>(null) }: { litKey?: string; hour?: number | null } = $props();
 
@@ -67,17 +68,6 @@
     for (const ch of litKey) s += ch.charCodeAt(0);
     return litKey ? s % WINDOWS.length : -1;
   });
-
-  const JEEP = [
-    "....gggggggggg....",
-    "...wwwwwwwwwwwww..",
-    "..wbbwbbwbbwbbrr..",
-    "..rrrrrrrrrrrrrrss",
-    "..yyyyyyyyyyyyyyss",
-    "..rrrrrrrrrrrrrrrs",
-    "...kk........kk...",
-  ];
-  const JEEPC: Record<string, string> = { g: "#c9a227", w: "#e9e4d6", b: "#2c3e57", r: "#b3202a", y: "#f2c14e", s: "#c7ccd3", k: "#141414" };
 
   let skyCache: HTMLCanvasElement | null = null;
   let skyKey = "";

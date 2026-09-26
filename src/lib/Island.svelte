@@ -1,7 +1,19 @@
 <script lang="ts">
+  import Jeepney from "./Jeepney.svelte";
   import { app, syncNow } from "./state.svelte";
 
   let open = $state(false);
+  let arrived = $state(false);
+  // A finished sync parks the jeepney for a beat before the glance returns.
+  let seen = app.syncCount;
+  $effect(() => {
+    if (app.syncCount === seen) return;
+    seen = app.syncCount;
+    arrived = true;
+    const t = setTimeout(() => (arrived = false), 2400);
+    return () => clearTimeout(t);
+  });
+  const trip = $derived(app.sync === "syncing" ? "drive" : arrived ? "arrived" : app.sync === "failed" ? "stalled" : null);
   const kind = $derived(app.sync === "syncing" ? "syncing" : (app.today?.glance.kind ?? "day_done"));
   const line = $derived(app.today?.glance_line ?? "IntPortal");
 
@@ -15,13 +27,17 @@
 <div class="wrap">
   <button class="island" class:open data-kind={kind} onclick={() => (open = !open)} aria-expanded={open}>
     <span class="row">
+      {#if trip}
+        <Jeepney mode={trip} />
+      {:else}
       <svg class="glyph" viewBox="0 0 7 9" shape-rendering="crispEdges" aria-hidden="true">
         <path d="M0 0h7v9H0z" fill="#34203f" />
         <path d="M1 1h5v7H1z" fill="#170b1a" />
         <path class="swirl a" d="M2 2h3v1H2zM1 4h2v1H1zM4 5h2v1H4zM2 6h3v1H2z" />
         <path class="swirl b" d="M3 3h2v1H3zM2 5h2v1H2zM4 2h1v2H4z" />
       </svg>
-      <span class="line" aria-live="polite">{kind === "syncing" ? "Syncing with SIS…" : line}</span>
+      {/if}
+      <span class="line" aria-live="polite">{kind === "syncing" ? "On the way to SIS…" : trip === "arrived" ? "Synced · everything's fresh" : line}</span>
       {#if kind === "in_session"}<span class="live" aria-hidden="true"></span>{/if}
     </span>
     {#if open}
