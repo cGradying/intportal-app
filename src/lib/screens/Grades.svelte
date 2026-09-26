@@ -74,19 +74,14 @@
     }
   }
 
-  // Trend path in a 100x40 box, lower grades (better) drawn higher.
-  const path = $derived.by(() => {
-    if (trend.length < 2) return "";
+  // Trend points in a 100x40 box, lower grades (better) drawn higher.
+  const points = $derived.by(() => {
+    if (trend.length < 2) return [];
     const vs = trend.map((p) => p.v);
     const lo = Math.min(...vs) - 0.1, hi = Math.max(...vs) + 0.1;
-    return trend
-      .map((p, i) => {
-        const x = Math.round((i / (trend.length - 1)) * 96) + 2;
-        const y = Math.round(((p.v - lo) / (hi - lo)) * 32) + 4;
-        return `${i ? "L" : "M"}${x} ${y}`;
-      })
-      .join(" ");
+    return trend.map((p, i) => ({ ...p, x: Math.round((i / (trend.length - 1)) * 92) + 4, y: Math.round(((p.v - lo) / (hi - lo)) * 30) + 5 }));
   });
+  const path = $derived(points.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" "));
 </script>
 
 <div class="screen">
@@ -106,8 +101,8 @@
     {#if path}
       <svg class="trend" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="GPA across terms">
         <path d={path} fill="none" stroke="var(--gold)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="miter" />
-        {#each trend as p, i (i)}
-          <rect x={Math.round((i / (trend.length - 1)) * 96)} y="0" width="4" height="40" fill="transparent"><title>{p.label}: {p.v.toFixed(2)}</title></rect>
+        {#each points as p, i (i)}
+          <rect x={p.x - 2} y={p.y - 2} width="4" height="4" fill={i === points.length - 1 ? "var(--gold)" : "var(--card)"} stroke="var(--gold)" stroke-width="1" vector-effect="non-scaling-stroke"><title>{p.label}: {p.v.toFixed(2)}</title></rect>
         {/each}
       </svg>
     {/if}
@@ -231,10 +226,11 @@
     min-width: 54px;
     padding: 4px 6px;
     text-align: center;
-    font-family: var(--font-pixel);
-    font-weight: 700;
-    font-size: 16px;
-    letter-spacing: 0.04em;
+    margin-right: 4px;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: 15px;
     color: var(--good);
     box-shadow: inset 0 0 0 2px currentColor;
     transform: rotate(-4deg);

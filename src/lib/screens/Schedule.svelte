@@ -88,6 +88,7 @@
   <div class="sheet notch" role="dialog" aria-label="Mark {picked.subject_code}">
     <p class="label">{picked.subject_code} · {clock(picked.start)}</p>
     <h2>How is this class meeting?</h2>
+    <p class="label">This week only</p>
     <div class="opts">
       <button onclick={() => mark("in_person", false)}>In person</button>
       <button onclick={() => mark("online", false)}>Online</button>
