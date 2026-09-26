@@ -6,9 +6,9 @@ It is a from-scratch rebuild of the macOS IntPortal app. The old app's docs live
 
 ## Layout
 
-- `crates/intportal-core` is the Rust core: SIS access, parsers, domain logic and SQLite.
-- `ui/` is the Svelte 5 interface.
-- `src-tauri/` is the Tauri 2 shell for iOS, Android, macOS and Windows.
+- `src/` is the Svelte 5 interface (SvelteKit, static adapter).
+- `src-tauri/` is the Tauri 2 shell for iOS, Android, macOS and Windows. The Rust core crate joins it in the Core crate part.
+- `spikes/` holds throwaway probes (S0: SIS over plain HTTP).
 - `docs/adr/` records the decisions that are hard to reverse.
 - `CONTEXT.md` is the glossary.
 
