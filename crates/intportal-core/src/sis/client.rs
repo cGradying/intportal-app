@@ -1,7 +1,7 @@
 use super::host::{self, Attempt, Decision};
 use super::scrape;
 use super::{Credentials, Error};
-use crate::grades::GradeRow;
+use crate::grades::{GradeReport, GradeRow};
 use crate::schedule::ScheduleRow;
 use reqwest::redirect::Policy;
 use std::collections::BTreeMap;
@@ -92,6 +92,47 @@ impl SisClient {
             return Err(Error::SignedOut);
         }
         Ok(scrape::grades(&page))
+    }
+}
+
+impl SisClient {
+    /// Every past term's grades, oldest first. A term that fails or has no
+    /// posted grades is skipped, never fatal to the rest.
+    pub async fn grade_history(&self) -> Result<Vec<GradeReport>, Error> {
+        let page = self.get("grades").await?;
+        if scrape::has_login_form(&page) {
+            return Err(Error::SignedOut);
+        }
+        let Some(p) = scrape::term_picker(&page) else { return Ok(vec![]) };
+        let action = reqwest::Url::parse(&self.url("grades"))
+            .and_then(|base| base.join(p.action.as_deref().unwrap_or("")))
+            .map_err(|e| Error::Network(e.to_string()))?;
+        if !host::is_trusted(&action) {
+            return Err(Error::UntrustedHost(action.to_string()));
+        }
+        let mut out = vec![];
+        for (year, year_label) in &p.years {
+            for (sem, sem_label) in &p.semesters {
+                let mut fields = p.fields.clone();
+                fields.push((p.year_field.clone(), year.clone()));
+                fields.push((p.semester_field.clone(), sem.clone()));
+                let req = if p.post { self.http.post(action.clone()).form(&fields) } else { self.http.get(action.clone()).query(&fields) };
+                let Ok(resp) = req.send().await else { continue };
+                let Ok(html) = resp.text().await else { continue };
+                let (rows, summary) = scrape::grades(&html);
+                let report = GradeReport {
+                    subjects: crate::grades::parse(&rows),
+                    summary,
+                    school_year: Some(year_label.clone()),
+                    semester: Some(sem_label.clone()),
+                };
+                if report.has_posted_grades() {
+                    out.push(report);
+                }
+            }
+        }
+        out.sort_by_key(|r| r.term_order());
+        Ok(out)
     }
 }
 

@@ -144,6 +144,72 @@ pub fn grades(html: &str) -> (Vec<GradeRow>, BTreeMap<String, String>) {
     (rows, summary)
 }
 
+/// The grades page's term picker: its form, and the School Year and Semester
+/// selects found by what their options look like, not by id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermPicker {
+    pub action: Option<String>,
+    pub post: bool,
+    /// Every other field the form submits, unchanged.
+    pub fields: Vec<(String, String)>,
+    pub year_field: String,
+    pub semester_field: String,
+    /// (value, label), with the selected one first.
+    pub years: Vec<(String, String)>,
+    pub semesters: Vec<(String, String)>,
+}
+
+static YEAR_LABEL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d{4}\s*-\s*\d{4}").unwrap());
+
+fn is_sem(label: &str) -> bool {
+    let l = label.to_lowercase();
+    l.contains("sem") || l.contains("summer") || l.contains("mid")
+}
+
+pub fn term_picker(html: &str) -> Option<TermPicker> {
+    let doc = Html::parse_document(html);
+    for form in doc.select(&sel("form")) {
+        let mut year = None;
+        let mut sem = None;
+        for select in form.select(&sel("select[name]")) {
+            let mut opts: Vec<(String, String, bool)> = select
+                .select(&sel("option"))
+                .map(|o| {
+                    let label = text(o);
+                    (o.value().attr("value").map(String::from).unwrap_or_else(|| label.clone()), label, o.value().attr("selected").is_some())
+                })
+                .filter(|(_, l, _)| !l.is_empty())
+                .collect();
+            opts.sort_by_key(|o| !o.2);
+            let name = select.value().attr("name").unwrap().to_string();
+            let years = opts.iter().filter(|o| YEAR_LABEL.is_match(&o.1)).count();
+            let sems = opts.iter().filter(|o| is_sem(&o.1)).count();
+            let pairs = |keep: &dyn Fn(&str) -> bool| opts.iter().filter(|o| keep(&o.1)).map(|o| (o.0.clone(), o.1.clone())).collect::<Vec<_>>();
+            if years > 0 && years >= sems && year.is_none() {
+                year = Some((name, pairs(&|l| YEAR_LABEL.is_match(l))));
+            } else if sems > 0 && sem.is_none() {
+                sem = Some((name, pairs(&is_sem)));
+            }
+        }
+        let (Some((year_field, years)), Some((semester_field, semesters))) = (year, sem) else { continue };
+        let fields = form
+            .select(&sel("input[name]"))
+            .filter(|e| !e.value().attr("type").is_some_and(|t| t.eq_ignore_ascii_case("button")))
+            .map(|e| (e.value().attr("name").unwrap().to_string(), e.value().attr("value").unwrap_or("").to_string()))
+            .collect();
+        return Some(TermPicker {
+            action: form.value().attr("action").map(String::from),
+            post: form.value().attr("method").is_some_and(|m| m.eq_ignore_ascii_case("post")),
+            fields,
+            year_field,
+            semester_field,
+            years,
+            semesters,
+        });
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -205,6 +271,21 @@ mod tests {
         assert_eq!(rows[1].unit, "3");
         assert_eq!(summary.get("Scholastic Status").map(String::as_str), Some("Regular"));
         assert_eq!(summary.get("GPA").map(String::as_str), Some("1.25"));
+    }
+
+    #[test]
+    fn term_picker_finds_selects_by_their_options() {
+        let html = r#"<form method="post" action="/student/grades">
+          <input type="hidden" name="csrf_token" value="t">
+          <select name="sy"><option value="">--</option><option value="2025">2025-2026</option><option value="2026" selected>2026-2027</option></select>
+          <select name="sem"><option value="1">First Semester</option><option value="2">Second Semester</option><option value="3">Summer</option></select>
+          <input type="submit" name="view" value="View"></form>"#;
+        let p = term_picker(html).unwrap();
+        assert_eq!((p.year_field.as_str(), p.semester_field.as_str(), p.post), ("sy", "sem", true));
+        assert_eq!(p.years, [("2026".into(), "2026-2027".into()), ("2025".into(), "2025-2026".into())]);
+        assert_eq!(p.semesters.len(), 3);
+        assert_eq!(p.fields, [("csrf_token".into(), "t".into()), ("view".into(), "View".into())]);
+        assert_eq!(term_picker(GRADES), None);
     }
 
     #[test]

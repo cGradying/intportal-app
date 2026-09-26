@@ -37,4 +37,8 @@ async fn main() {
         }
         Err(e) => println!("grades failed: {e}"),
     }
+    match client.grade_history().await {
+        Ok(h) => println!("past terms with posted grades: {:?}", h.iter().map(|r| (r.school_year.clone().unwrap_or_default(), r.semester.clone().unwrap_or_default(), r.gpa())).collect::<Vec<_>>()),
+        Err(e) => println!("history failed: {e}"),
+    }
 }

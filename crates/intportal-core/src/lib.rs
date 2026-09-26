@@ -5,3 +5,5 @@ pub mod grades;
 pub mod model;
 pub mod schedule;
 pub mod sis;
+pub mod store;
+pub mod today;

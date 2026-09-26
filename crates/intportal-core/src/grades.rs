@@ -74,6 +74,23 @@ impl GradeReport {
         self.subjects.iter().any(SubjectGrade::is_posted)
     }
 
+    /// Oldest first: start year times ten plus the semester's rank
+    /// (1st, 2nd, then summer).
+    pub fn term_order(&self) -> i32 {
+        let year = self.school_year.as_deref().and_then(|y| y.split(|c: char| !c.is_ascii_digit()).next()?.parse().ok()).unwrap_or(0);
+        let s = self.semester.as_deref().unwrap_or("").to_lowercase();
+        let rank = if s.contains("1st") || s.contains("first") {
+            1
+        } else if s.contains("2nd") || s.contains("second") {
+            2
+        } else if s.contains("summer") || s.contains("mid") {
+            3
+        } else {
+            0
+        };
+        year * 10 + rank
+    }
+
     /// Posted units only, so unposted, INC and DRP don't inflate it.
     pub fn completed_units(&self) -> f64 {
         self.subjects.iter().filter(|s| s.is_posted()).map(|s| s.units).sum()
@@ -200,6 +217,12 @@ mod tests {
         let dup = row("COMP 20073", "3", "1.00");
         let ids: Vec<String> = parse(&[dup.clone(), other, dup]).iter().map(SubjectGrade::id).collect();
         assert_eq!(ids, ["COMP 20073-1", "COMP 20073-2", "COMP 20073-1-1"]);
+    }
+
+    #[test]
+    fn term_order_is_chronological() {
+        let r = |y: &str, s: &str| GradeReport { subjects: vec![], summary: BTreeMap::new(), school_year: Some(y.into()), semester: Some(s.into()) }.term_order();
+        assert_eq!([r("2025-2026", "First Semester"), r("2025-2026", "2nd Semester"), r("2025-2026", "Summer"), r("2026-2027", "1st Semester")], [20251, 20252, 20253, 20261]);
     }
 
     #[test]
