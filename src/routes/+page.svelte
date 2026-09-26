@@ -61,16 +61,18 @@
 <style>
   .shell {
     min-height: 100vh;
-    animation: arrive 0.65s var(--ease) both;
+  }
+  /* No fill mode: a lingering filter or transform would turn these into the
+     containing block for the fixed island, tab bar and sheets. */
+  main {
+    animation: arrive 0.65s var(--ease) backwards;
+    padding: calc(var(--safe-top) + 58px) var(--gutter) calc(var(--safe-bottom) + 92px);
   }
   @keyframes arrive {
     from { filter: brightness(2.2) saturate(0.4); }
   }
-  main {
-    padding: calc(var(--safe-top) + 58px) var(--gutter) calc(var(--safe-bottom) + 92px);
-  }
   .page {
-    animation: in 0.3s var(--ease) both;
+    animation: in 0.3s var(--ease) backwards;
   }
   @keyframes in {
     from { opacity: 0; transform: translateY(6px); }
