@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, setRoom, syncNow } from "../state.svelte";
+  import { app, setReminderLead, setRoom, syncNow } from "../state.svelte";
   import { api } from "../api";
 
   let { onsignout }: { onsignout: () => void } = $props();
@@ -33,6 +33,20 @@
     <div class="line"><span>Last synced</span><strong>{synced}</strong></div>
     <div class="line"><span>Server</span><strong>{app.snapshot?.host ?? "—"}</strong></div>
     <button class="primary" onclick={syncNow} disabled={app.sync === "syncing"}>{app.sync === "syncing" ? "Syncing…" : "Sync now"}</button>
+  </section>
+
+  <section class="card notch block">
+    <p class="label">Class reminders</p>
+    <div class="leads">
+      {#each [0, 5, 10, 15, 30] as m (m)}
+        <button class:on={app.reminderLead === m} onclick={() => setReminderLead(m)}>{m === 0 ? "Off" : `${m} min`}</button>
+      {/each}
+    </div>
+    <p class="fine">{app.reminderLead ? `A nudge ${app.reminderLead} minutes before each class. A class you mark vacant stays quiet that week.` : "No reminders."}</p>
+    {#if app.queued.error}<p class="queued">Couldn't schedule reminders: {app.queued.error}</p>{/if}
+    {#if app.queued.next}
+      <p class="queued">Next: <strong>{app.queued.next.title}</strong>, {app.queued.next.at.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })} · {app.queued.count} this week</p>
+    {/if}
   </section>
 
   <section class="card notch block">
@@ -114,6 +128,22 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
+  .leads {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .leads button {
+    height: 38px;
+    background: var(--sunk);
+    box-shadow: inset 0 0 0 1px var(--edge);
+    font-size: 13px;
+  }
+  .leads button.on {
+    background: var(--gold);
+    color: var(--on-gold);
+    box-shadow: none;
+  }
   .rooms {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -141,6 +171,14 @@
   }
   .swatch i {
     flex: 1;
+  }
+  .queued {
+    margin: 0;
+    font-size: 13px;
+    color: var(--gold);
+  }
+  .queued strong {
+    color: var(--ink);
   }
   .fine {
     margin: 0;

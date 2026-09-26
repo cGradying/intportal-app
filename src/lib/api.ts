@@ -64,6 +64,14 @@ export interface Today {
   glance_line: string;
 }
 
+export interface Reminder {
+  id: number;
+  date: string;
+  minute: number;
+  title: string;
+  body: string;
+}
+
 export interface Login {
   student_number: string;
   birth_month: number;
@@ -82,6 +90,7 @@ export const api = {
   setMark: (sessionId: string, week: string | null, mark: Mark | null) =>
     invoke<Snapshot>("set_mark", { sessionId, week, mark }),
   today: (now: Moment, syncTrouble: string | null) => invoke<Today>("today", { now, syncTrouble }),
+  reminders: (now: Moment, lead: number, days: number) => invoke<Reminder[]>("reminders", { now, lead, days }),
   demo: (today: string) => invoke<Snapshot>("demo", { today }),
 };
 

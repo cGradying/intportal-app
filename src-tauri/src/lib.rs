@@ -6,7 +6,7 @@ use intportal_core::model::{ClassSession, Weekday};
 use intportal_core::schedule;
 use intportal_core::sis::{self, sign_in_with_failover, Credentials, SisClient};
 use intportal_core::store::{Snapshot, Store};
-use intportal_core::today::{self, Agenda, Date, Glance, Mark, Moment, Upcoming};
+use intportal_core::today::{self, Agenda, Date, Glance, Mark, Moment, Reminder, Upcoming};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -212,6 +212,13 @@ fn today(state: tauri::State<'_, AppState>, now: Moment, sync_trouble: Option<St
     })
 }
 
+/// The next `days` of class reminders; the UI hands them to the platform.
+#[tauri::command]
+fn reminders(state: tauri::State<'_, AppState>, now: Moment, lead: u16, days: u16) -> Res<Vec<Reminder>> {
+    let snap = snapshot_of(&state)?;
+    Ok(today::reminders(&snap.sessions, &snap.marks, now, lead, days))
+}
+
 /// Review builds only: a fake week and term so every screen can be seen
 /// without an SIS account.
 #[tauri::command]
@@ -292,7 +299,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            snapshot, has_login, sign_in, sync, load_history, sign_out, set_mark, today, demo
+            snapshot, has_login, sign_in, sync, load_history, sign_out, set_mark, today, reminders, demo
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
